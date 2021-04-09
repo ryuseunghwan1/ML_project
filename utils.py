@@ -39,6 +39,7 @@ from sklearn.svm import SVC
 # 
 
 
+# TODO : check
 def split_train_test(df, 
                      test_size=0.2, 
                      random_state=42):
@@ -71,6 +72,7 @@ def split_train_test(df,
     return X_train, X_test, y_train, y_test
 
 
+# TODO : check
 def clf_evaluation(y_test, 
                    pred,
                    acc_s=True,
@@ -128,7 +130,32 @@ def clf_evaluation(y_test,
     
     return acc, pre, rec, f1, auc
     
+
+# TODO : check    
+def dummy_selected(X_train, X_test, df):
+    """
+    df : 전처리를 마친 df를 넣어주세요
+    X_train : 해당 df의 train data
+    X_test : 해당 df의 test data
+    """
     
+    cat_features = ['car_model', 'sharing_type', 'age_group',
+           'b2b', 'pf_type', 'start_hour','duration', 'accident_hour',
+           'accident_location', 'acc_type1', 'insurance_site_aid_YN', 'police_site_aid_YN',
+           'total_prsn_cnt']
+
+    dum_features = [feature for feature in cat_features if feature in list(df.columns)]
+
+    X_train_1hot = pd.get_dummies(X_train, columns=dum_features)
+    X_test_1hot = pd.get_dummies(X_test, columns=dum_features)
+    
+    print('get dummies!')
+    print('X_train : ', X_train_1hot.shape)
+    print('X_test : ', X_test_1hot.shape)
+    
+    return X_train_1hot, X_test_1hot    
+
+
 def get_result(model, X_train, y_train, X_test, y_test):
     model.fit(X_train, y_train)
     pred = model.predict(X_test)
