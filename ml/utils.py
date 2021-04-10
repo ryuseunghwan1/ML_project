@@ -46,7 +46,7 @@ from sklearn.svm import SVC
 # clf_evaluation
 # 
 
-# TODO : 파라미터 점검
+# TODO : 스케일러, 모델, 파라미터 점검
 #
 # Scaler
 scaler = [('Robust', RobustScaler())]
