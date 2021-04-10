@@ -78,6 +78,8 @@ svc_params = [{'clf__kernel': ['poly','rbf']}]
 
 
 # TODO : 완료했습니다. 검토 부탁드립니다.
+# (현수) test_size, random_state는 불필요해보여 삭제 제안
+# (현수) 96th 줄 오타 수정완료 (random numder -> random number)
 def split_train_test(df, 
                      test_size=0.2, 
                      random_state=42):
@@ -91,7 +93,7 @@ def split_train_test(df,
     
     test_size : default 0.2
     
-    random_state : default 42 (random numder)
+    random_state : default 42 (random number)
     
     """
     train_set = df[df['test_set'] == 0]
@@ -111,6 +113,7 @@ def split_train_test(df,
 
 
 # TODO : 완료했습니다. 검토 부탁드립니다
+# (현수) else값들이 모두 0으로 되어있는데, 실제값이 0이 나오는 경우도 있어서 그거랑 구분되게 "False", "None"이나 기타값 등으로 교체 제안
 def clf_evaluation(y_test, 
                    y_pred,
                    acc_s=True,
@@ -170,6 +173,8 @@ def clf_evaluation(y_test,
     
 
 # TODO : 
+# (현수) df를 받는 이유가 189행의 df.columns 때문인 것 같은데, 맞다면 여기에 X_train를 쓰고 df는 지우는 게 받는 인수 최소화하여 효율적일 것 같아 제안
+# (현수) print("X_train", "X_test")에서 혼동을 막기 위해 print("X_train_1hot", "X_test_1hot") 등으로 하는 게 어떨까 제안
 def dummy_selected(X_train, X_test, df):
     """
     df : 전처리를 마친 df를 넣어주세요
@@ -246,7 +251,7 @@ def fit_cv(X_train, y_train, X_test, y_test, scoring='recall'):
 # 따라서 각 모델마다 가장 좋은 파라미터 설정을 찾는 CV를 각각 만드는 방법을 선택
 # 만약 비교 없이 1개의 모델만 활용 할 계획이면 사용 가능
 
-
+# (현수) 일단은 우리가 할 모델이 5개 (LogiReg, DecTree, RandFor, LGBM, SVC)니까, 각 1줄씩 5줄로 돌린다고 생각, 결과 낸 후 코드 효율화 추후 고민 제안
 class ClfSwitcher(BaseEstimator):
     def __init__(self, estimator = LogisticRegression(random_state=13)):
         """
@@ -274,6 +279,7 @@ class ClfSwitcher(BaseEstimator):
     # 코드 출처 : https://stackoverflow.com/questions/50285973/pipeline-multiple-classifiers?answertab=votes#tab-top
 
 
+# (현수) n_jobs=12 보다 -1이 낫지 않을까 제안 (12라는 절대적 숫자 미충족하는 컴퓨터일 가능성 존재, 반면 -1은 '전체'라는 뜻의 가변적 숫자)
 def fit_cross_validation(X_train, y_train, scoring='recall',*kwargs):
     """
     Fit X_train, y_train into estimator via GridSearchCV
