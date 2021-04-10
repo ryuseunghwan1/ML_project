@@ -20,11 +20,15 @@ ut.split_train_test(socar_rd_cp)
 #           ryuseunghwan1 <github.com/ryuseunghwan1>
 
 import time
-
-from sklearn.model_selection import train_test_split
+import numpy as np
+import pandas as pd
 
 # model selection
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, confusion_matrix
+
+# sampler
+from imblearn.over_sampling import SMOTE
+from imblearn.over_sampling import ADASYN
 
 # pipeline
 from sklearn.base import BaseEstimator
@@ -41,15 +45,19 @@ from lightgbm import LGBMClassifier
 from sklearn.svm import LinearSVC
 from sklearn.svm import SVC
 
+# CV
+from sklearn.model_selection import KFold, GridSearchCV
 
-# split_train_test
-# clf_evaluation
-# 
 
-# TODO : 스케일러, 모델, 파라미터 점검
-#
+# TODO : 스케일러, 모델, 파라미터 세팅
+#        샘플러 추가?
+
+# Sampler
+samplers = [('SMOTE', SMOTE(random_state=13)), 
+           ('ADASYN',ADASYN(random_state=13))]
+
 # Scaler
-scaler = [('Robust', RobustScaler())]
+scalers = [('robust', RobustScaler())]
 
 # Estimator
 clfs = [('LogisticReg', LogisticRegression(random_state=13)),
@@ -59,14 +67,6 @@ clfs = [('LogisticReg', LogisticRegression(random_state=13)),
           ('SVC', SVC(random_state=13))]
 
 clf_names = [clf[0] for clf in clfs]
-
-
-# Pipelines
-lr_pipe = Pipeline([("scaler", scaler[0][1]), ("clf", clfs[0][1])])
-dt_pipe = Pipeline([("scaler", scaler[0][1]), ("clf", clfs[1][1])])
-rf_pipe = Pipeline([("scaler", scaler[0][1]), ("clf", clfs[2][1])])
-lgbm_pipe = Pipeline([("scaler", scaler[0][1]), ("clf", clfs[3][1])])
-svm_pipe = Pipeline([("scaler", scaler[0][1]), ("clf", clfs[4][1])])
                    
                    
 # parameters
@@ -77,12 +77,8 @@ lgbm_params = [{'clf__n_estimators' : [10, 30, 50, 100], 'clf__num_leaves': [4, 
 svc_params = [{'clf__kernel': ['poly','rbf']}]
 
 
-# TODO : 완료했습니다. 검토 부탁드립니다.
-# (현수) test_size, random_state는 불필요해보여 삭제 제안
-# (현수) 96th 줄 오타 수정완료 (random numder -> random number)
-def split_train_test(df, 
-                     test_size=0.2, 
-                     random_state=42):
+# Done
+def split_train_test(df):
     """
     Split sc dataset into train and test subsets easily.
     
@@ -91,10 +87,13 @@ def split_train_test(df,
     ----------    
     df : DataFrame
     
-    test_size : default 0.2
     
-    random_state : default 42 (random number)
+    return
+    ----------    
+    X_train, X_test, y_train, y_test
     
+    .
+
     """
     train_set = df[df['test_set'] == 0]
     test_set = df[df['test_set'] == 1]
@@ -105,15 +104,51 @@ def split_train_test(df,
     X_test = test_set.drop(['test_set', 'fraud_YN'], axis=1)
     y_test = test_set['fraud_YN']
     
-    print('split result')
-    print('y_train : ', list(map(lambda x: x.tolist(),np.unique(y_train, return_counts=True))))
-    print('y_test :', list(map(lambda x: x.tolist(),np.unique(y_test, return_counts=True))) )
+    print('==Split Result==')
+    print('y_train : ', list(map(lambda x: x.tolist(), np.unique(y_train, return_counts=True))))
+    print('y_test :', list(map(lambda x: x.tolist(), np.unique(y_test, return_counts=True))) )
 
     return X_train, X_test, y_train, y_test
 
 
-# TODO : 완료했습니다. 검토 부탁드립니다
-# (현수) else값들이 모두 0으로 되어있는데, 실제값이 0이 나오는 경우도 있어서 그거랑 구분되게 "False", "None"이나 기타값 등으로 교체 제안
+# TODO : 샘플러 선택기
+def fit_sampler(X_train, 
+                y_train, 
+                sampler='SMOTE'):
+    """
+    Sampler selector and fit_resample
+    
+
+    Parameters
+    ----------
+    X_train : 
+        Truth labels
+        
+    y_train : 
+        Predicted labels
+        
+    sampler : (string), default='SMOTE'
+        'ADASYN', +..
+
+    Return
+    ----------    
+    X_train_over, y_train_over
+    
+    .
+    
+    """
+    sampler_selected = [smplr_tuple[1] for idx, smplr_tuple in enumerate(samplers) if smplr_tuple[0] == sampler][0]
+
+    X_train_over, y_train_over = sampler_selected.fit_resample(X_train, y_train)
+
+    print('==Sampling Result==')
+    print('y_train : ', list(map(lambda x: x.tolist(), np.unique(y_train, return_counts=True))))
+    print('y_train_over :', list(map(lambda x: x.tolist(), np.unique(y_train_over, return_counts=True))))
+
+    return X_train_over, y_train_over
+
+
+# Done
 def clf_evaluation(y_test, 
                    y_pred,
                    acc_s=True,
@@ -130,33 +165,33 @@ def clf_evaluation(y_test,
     y_test : 
         Truth labels
         
-    pred : 
+    y_pred : 
         Predicted labels
         
-    acc_s, pre_s, rec_s, f1_s, auc_s, conf_m : bool, default=True
+    acc_s, pre_s, rec_s, f1_s, auc_s, conf_m : (bool), default=True
         On-off each scores
     
     """
     if acc_s :
         acc = accuracy_score(y_test, y_pred)
     else:
-        acc = 0
+        acc = None
     if pre_s :
         pre = precision_score(y_test, y_pred)
     else:
-        pre = 0
+        pre = None
     if rec_s :
         rec = recall_score(y_test, y_pred)
     else:
-        rec = 0
+        rec = None
     if f1_s :
         f1 = f1_score(y_test, y_pred)
     else:
-        f1 = 0
+        f1 = None
     if auc_s :
         auc = roc_auc_score(y_test, y_pred)
     else:
-        auc = 0
+        auc = None
     if conf_m :
         confusion = confusion_matrix(y_test, y_pred)
         print('=> confusion matrix')
@@ -174,10 +209,14 @@ def clf_evaluation(y_test,
 
 # TODO : 
 # (현수) df를 받는 이유가 189행의 df.columns 때문인 것 같은데, 맞다면 여기에 X_train를 쓰고 df는 지우는 게 받는 인수 최소화하여 효율적일 것 같아 제안
-# (현수) print("X_train", "X_test")에서 혼동을 막기 위해 print("X_train_1hot", "X_test_1hot") 등으로 하는 게 어떨까 제안
-def dummy_selected(X_train, X_test, df):
+# (dk) 해당 파트 미완성으로 승환님께 전달 => train. 
+# (승환) : 
+def dummy_selected(X_train=None, X_test=None, df=None):
     """
-    df : 전처리를 마친 df를 넣어주세요
+    train, test
+
+    Parameters
+    ----------
     X_train : 해당 df의 train data
     X_test : 해당 df의 test data
     """
@@ -187,20 +226,49 @@ def dummy_selected(X_train, X_test, df):
            'accident_location', 'acc_type1', 'insurance_site_aid_YN', 'police_site_aid_YN',
            'total_prsn_cnt']
 
-    dum_features = [feature for feature in cat_features if feature in list(df.columns)]
+    dum_features = [feature for feature in cat_features if feature in list(X_train.columns)]
 
     X_train_1hot = pd.get_dummies(X_train, columns=dum_features)
     X_test_1hot = pd.get_dummies(X_test, columns=dum_features)
     
     print('get dummies!')
-    print('X_train : ', X_train_1hot.shape)
-    print('X_test : ', X_test_1hot.shape)
+    print('X_train_1hot : ', X_train_1hot.shape)
+    print('X_test_1hot : ', X_test_1hot.shape)
     
     return X_train_1hot, X_test_1hot    
 
 
+# TODO : progress bar를 넣으면 좋겠습니다.
 # gridsearchCV 완료했습니다 리뷰 부탁드립니다
-def fit_cv(X_train, y_train, X_test, y_test, scoring='recall'):
+def fit_cv(X_train, y_train, X_test, y_test, scoring='recall', scaler='robust', **kwargs):
+    """
+    
+    Parameters
+    ----------
+
+    scoring : (string), default='recall'
+        'recall', 'precision', 'f1'
+    
+    scaler : (string), default='robust'
+    .
+    
+    Return
+    ----------
+    
+    result_df : (DataFrame), 
+    
+    
+    """
+
+    scaler_selected = [smplr_tuple[1] for idx, smplr_tuple in enumerate(scalers) if smplr_tuple[0] == scaler][0]
+    
+    # Pipelines
+    lr_pipe = Pipeline([("scaler", scaler_selected), ("clf", clfs[0][1])])
+    dt_pipe = Pipeline([("scaler", scaler_selected), ("clf", clfs[1][1])])
+    rf_pipe = Pipeline([("scaler", scaler_selected), ("clf", clfs[2][1])])
+    lgbm_pipe = Pipeline([("scaler", scaler_selected), ("clf", clfs[3][1])])
+    svm_pipe = Pipeline([("scaler", scaler_selected), ("clf", clfs[4][1])])
+
     lr_CV = GridSearchCV(lr_pipe, lr_params, cv=5, scoring=scoring)
     dt_CV = GridSearchCV(dt_pipe, dt_params, cv=5, scoring=scoring)
     rf_CV = GridSearchCV(rf_pipe, rf_params, cv=5, scoring=scoring)
@@ -217,8 +285,8 @@ def fit_cv(X_train, y_train, X_test, y_test, scoring='recall'):
         y_pred_train = cv.predict(X_train)
         y_pred_test = cv.predict(X_test)
 
-        acc_tr, pre_tr, rec_tr, f1_tr, auc_tr = clf_evaluation(y_train, y_pred_train)
-        acc_te, pre_te, rec_te, f1_te, auc_te = clf_evaluation(y_test, y_pred_test)
+        acc_tr, pre_tr, rec_tr, f1_tr, auc_tr = clf_evaluation(y_train, y_pred_train, **kwargs)
+        acc_te, pre_te, rec_te, f1_te, auc_te = clf_evaluation(y_test, y_pred_test, **kwargs)
 
         result = {'classifier' : clfs[idx][0],
                   'train accuracy' : acc_tr,
@@ -237,8 +305,24 @@ def fit_cv(X_train, y_train, X_test, y_test, scoring='recall'):
     result_df
     return result_df
     
+    
+# TODO : 그래프도 보여주게 만들기    
+def draw_roc_curve(models, model_names, X_test, y_test):
+    plt.figure(figsize=(10,10))
+    
+    for idx in range(len(models)):
+        pred = models[idx][1].predict_proba(X_test)[:, 1]
+        fpr, tpr, thresholds = roc_curve(y_test, pred)
+        plt.plot(fpr, tpr, label=model_names[idx])
+        
+    plt.plot([0,1], [0,1], 'k--', label='random quess')
+    plt.title('ROC')
+    plt.legend()
+    plt.grid()
+    plt.show()
 
 
+    
 # ClfSwitcher() : 포기
 
 # Pipeline에 Classifier Switcher Class를 만들어 여러 모델을 한번에 학습시키려 시도
@@ -251,8 +335,10 @@ def fit_cv(X_train, y_train, X_test, y_test, scoring='recall'):
 # 따라서 각 모델마다 가장 좋은 파라미터 설정을 찾는 CV를 각각 만드는 방법을 선택
 # 만약 비교 없이 1개의 모델만 활용 할 계획이면 사용 가능
 
-# (현수) 일단은 우리가 할 모델이 5개 (LogiReg, DecTree, RandFor, LGBM, SVC)니까, 각 1줄씩 5줄로 돌린다고 생각, 결과 낸 후 코드 효율화 추후 고민 제안
-class ClfSwitcher(BaseEstimator):
+# (현수) 일단은 우리가 할 모델이 5개 (LogiReg, DecTree, RandFor, LGBM, SVC)니까, 각 1줄씩 5줄로 돌린다고 생각, 결과 낸 후 코드 효율화 추후 고민 제안 
+# (dk) 확인!
+
+class __ClfSwitcher(BaseEstimator):
     def __init__(self, estimator = LogisticRegression(random_state=13)):
         """
         estimator : estimator
@@ -279,8 +365,7 @@ class ClfSwitcher(BaseEstimator):
     # 코드 출처 : https://stackoverflow.com/questions/50285973/pipeline-multiple-classifiers?answertab=votes#tab-top
 
 
-# (현수) n_jobs=12 보다 -1이 낫지 않을까 제안 (12라는 절대적 숫자 미충족하는 컴퓨터일 가능성 존재, 반면 -1은 '전체'라는 뜻의 가변적 숫자)
-def fit_cross_validation(X_train, y_train, scoring='recall',*kwargs):
+def __fit_cross_validation(X_train, y_train, scoring='recall',*kwargs):
     """
     Fit X_train, y_train into estimator via GridSearchCV
     
@@ -327,12 +412,13 @@ def fit_cross_validation(X_train, y_train, scoring='recall',*kwargs):
         }
     ]
 
-    CV = GridSearchCV(pipeline, parameters, cv=5, n_jobs=12, return_train_score=False, verbose=3, scoring=scoring)
+    CV = GridSearchCV(pipeline, parameters, cv=5, n_jobs=-1, return_train_score=False, verbose=3, scoring=scoring)
     print_estimator = [print(i) for i in CV.best_estimator_.steps] 
     
     CV.fit(X_train, y_train)
     
     return CV
+
 
 
 def get_result(model, X_train, y_train, X_test, y_test):
@@ -351,20 +437,6 @@ def get_result_pd(models, model_names, X_train, y_train, X_test, y_test):
         
     return pd.DataFrame(tmp, columns=col_names, index=model_names)
 
-
-def draw_roc_curve(models, model_names, X_test, y_test):
-    plt.figure(figsize=(10,10))
-    
-    for idx in range(len(models)):
-        pred = models[idx][1].predict_proba(X_test)[:, 1]
-        fpr, tpr, thresholds = roc_curve(y_test, pred)
-        plt.plot(fpr, tpr, label=model_names[idx])
-        
-    plt.plot([0,1], [0,1], 'k--', label='random quess')
-    plt.title('ROC')
-    plt.legend()
-    plt.grid()
-    plt.show()
 
     
 def fit_model(models, model_names, X_train, y_train, X_test, y_test):
