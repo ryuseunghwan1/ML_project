@@ -27,6 +27,7 @@ import matplotlib.pyplot as plt
 
 # model selection
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, confusion_matrix
+from sklearn.metrics import roc_curve
 
 # sampler
 from imblearn.over_sampling import SMOTE
@@ -340,7 +341,7 @@ def draw_roc_curve(models, model_names, X_test, y_test):
 # (현수) 일단은 우리가 할 모델이 5개 (LogiReg, DecTree, RandFor, LGBM, SVC)니까, 각 1줄씩 5줄로 돌린다고 생각, 결과 낸 후 코드 효율화 추후 고민 제안 
 # (dk) 확인!
 
-class __ClfSwitcher(BaseEstimator):
+class ClfSwitcher(BaseEstimator):
     def __init__(self, estimator = LogisticRegression(random_state=13)):
         """
         estimator : estimator
@@ -420,24 +421,3 @@ def __fit_cross_validation(X_train, y_train, scoring='recall',*kwargs):
     CV.fit(X_train, y_train)
     
     return CV
-
-    
-def fit_model(models, model_names, X_train, y_train, X_test, y_test):
-    """
-    models : models
-    model_names : model_names
-    X_train : X_train
-    y_train : y_train
-    X_test : X_test
-    y_train : y_train
-    """
-    
-    st_time = time.time()
-
-    results = get_result_pd(models, model_names, X_train, y_train, X_test, y_test)
-
-    print('Finish fitting!')
-    print('Fit time :', time.time() - st_time)
-    print('<Results>')
-    print(results)
-    draw_roc_curve(models, model_names, X_test, y_test)
