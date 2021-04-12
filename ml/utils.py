@@ -22,6 +22,7 @@ ut.split_train_test(socar_rd_cp)
 import time
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 
 # model selection
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, confusion_matrix
@@ -60,7 +61,7 @@ samplers = [('SMOTE', SMOTE(random_state=13)),
 scalers = [('robust', RobustScaler())]
 
 # Estimator
-clfs = [('LogisticReg', LogisticRegression(random_state=13)),
+clfs = [('LogisticReg', LogisticRegression(random_state=13, max_iter=1000)),
           ('DecisionTree', DecisionTreeClassifier(random_state=13)),
           ('RandomForest', RandomForestClassifier(random_state=13)),
           ('LightGBM', LGBMClassifier(random_state=13, boost_from_average=False)),
@@ -418,25 +419,6 @@ def __fit_cross_validation(X_train, y_train, scoring='recall',*kwargs):
     CV.fit(X_train, y_train)
     
     return CV
-
-
-
-def get_result(model, X_train, y_train, X_test, y_test):
-    model.fit(X_train, y_train)
-    pred = model.predict(X_test)
-    
-    return get_clf_eval(y_test, pred)
-
-
-def get_result_pd(models, model_names, X_train, y_train, X_test, y_test):
-    col_names = ['accuracy', 'precision', 'recall', 'f1', 'roc_auc']
-    tmp = []
-    
-    for model in models:
-        tmp.append(get_result(model[1], X_train, y_train, X_test, y_test))
-        
-    return pd.DataFrame(tmp, columns=col_names, index=model_names)
-
 
     
 def fit_model(models, model_names, X_train, y_train, X_test, y_test):
