@@ -30,8 +30,8 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 from sklearn.metrics import roc_curve
 
 # sampler
-from imblearn.over_sampling import SMOTE
-from imblearn.over_sampling import ADASYN
+from imblearn.over_sampling import SMOTE, SMOTENC, SMOTEN, ADASYN, BorderlineSMOTE, KMeansSMOTE, SVMSMOTE
+from imblearn.over_sampling import RandomOverSampler
 
 # pipeline
 from sklearn.base import BaseEstimator
@@ -56,8 +56,13 @@ from sklearn.model_selection import KFold, GridSearchCV
 #        샘플러 추가?
 
 # Sampler
-samplers = [('SMOTE', SMOTE(random_state=13)), 
-           ('ADASYN',ADASYN(random_state=13))]
+samplers = [('SMOTE', SMOTE(random_state=13)),
+            ('SMOTENC', SMOTENC(random_state=13)), 
+            ('ADASYN', ADASYN(random_state=13)), 
+            ('BorderlineSMOTE', BorderlineSMOTE(random_state=13)), 
+            ('KMeansSMOTE', KMeansSMOTE(random_state=13)), 
+            ('SVMSMOTE', SVMSMOTE(random_state=13)), 
+            ('RandomOverSampler', RandomOverSampler(random_state=13))]
 
 # Scaler
 scalers = [('robust', RobustScaler())]
