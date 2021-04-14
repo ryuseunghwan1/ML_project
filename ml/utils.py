@@ -18,25 +18,32 @@ ut.split_train_test(socar_rd_cp)
 # Authors : dokyum <github.com/dockyum>
 #           EbraLim <github.com/EbraLim>
 #           ryuseunghwan1 <github.com/ryuseunghwan1>
+<<<<<<< HEAD
 #!pip install imblearn
+=======
+# !pip install imblearn
+>>>>>>> e179ae78128c58ac2d11936438a47afcbc431342
 
 import time
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 # model selection
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, confusion_matrix
+from sklearn.metrics import roc_curve
 
 # sampler
-from imblearn.over_sampling import SMOTE
-from imblearn.over_sampling import ADASYN
+from imblearn.over_sampling import SMOTE, SMOTENC, SMOTEN, ADASYN, BorderlineSMOTE, KMeansSMOTE, SVMSMOTE
+from imblearn.over_sampling import RandomOverSampler
 
 # pipeline
 from sklearn.base import BaseEstimator
 from sklearn.pipeline import Pipeline
 
 # scaler
-from sklearn.preprocessing import RobustScaler
+from sklearn.preprocessing import RobustScaler, StandardScaler, MinMaxScaler
 
 # models
 from sklearn.linear_model import LogisticRegression
@@ -54,14 +61,24 @@ from sklearn.model_selection import KFold, GridSearchCV
 #        샘플러 추가?
 
 # Sampler
-samplers = [('SMOTE', SMOTE(random_state=13)), 
-           ('ADASYN',ADASYN(random_state=13))]
+# ('SMOTENC', SMOTENC(random_state=13)) : for dataset containing numerical and categorical features. only categorical은 안된답니다.
+#
+
+samplers = [('SMOTE', SMOTE(random_state=13)),
+            ('ADASYN', ADASYN(random_state=13)), 
+            ('BorderlineSMOTE', BorderlineSMOTE(random_state=13)), 
+            ('KMeansSMOTE', KMeansSMOTE(random_state=13)), 
+            ('SVMSMOTE', SVMSMOTE(random_state=13)), 
+            ('RandomOverSampler', RandomOverSampler(random_state=13))]
 
 # Scaler
-scalers = [('robust', RobustScaler())]
+scalers = [('No', None ),
+           ('RB', RobustScaler()),
+           ('SD', StandardScaler()),
+           ('MM', MinMaxScaler()),]
 
 # Estimator
-clfs = [('LogisticReg', LogisticRegression(random_state=13)),
+clfs = [('LogisticReg', LogisticRegression(random_state=13, max_iter=1000)),
           ('DecisionTree', DecisionTreeClassifier(random_state=13)),
           ('RandomForest', RandomForestClassifier(random_state=13)),
           ('LightGBM', LGBMClassifier(random_state=13, boost_from_average=False)),
@@ -75,7 +92,7 @@ lr_params = [{'clf__penalty': ['l2']}]
 dt_params = [{'clf__max_depth' : [None, 2, 3, 4]}]
 rf_params = [{'clf__n_estimators': [1, 5, 10, 20], 'clf__max_depth' : [2, 3, 4, 5, 10, 50, 100]}]
 lgbm_params = [{'clf__n_estimators' : [10, 30, 50, 100], 'clf__num_leaves': [4, 8, 16]}]
-svc_params = [{'clf__kernel': ['poly','rbf']}]
+svc_params = [{'clf__kernel': ['poly'], 'clf__C' : [10] }]
 
 
 # Done
@@ -129,7 +146,7 @@ def fit_sampler(X_train,
         Predicted labels
         
     sampler : (string), default='SMOTE'
-        'ADASYN', +..
+        'ADASYN', 'BorderlineSMOTE', 'KMeansSMOTE', 'SVMSMOTE', 'RandomOverSampler'
 
     Return
     ----------    
@@ -138,7 +155,7 @@ def fit_sampler(X_train,
     .
     
     """
-    sampler_selected = [smplr_tuple[1] for idx, smplr_tuple in enumerate(samplers) if smplr_tuple[0] == sampler][0]
+    sampler_selected = [one[1] for one in samplers if one[0] == sampler][0]
 
     X_train_over, y_train_over = sampler_selected.fit_resample(X_train, y_train)
 
@@ -157,7 +174,8 @@ def clf_evaluation(y_test,
                    rec_s=True,
                    f1_s=True,
                    auc_s=True,
-                   conf_m=True):
+                   conf_m=True,
+                   view_scores=True):
     """
     Get all evaluation scores from 'y_test', 'y_pred'.
 
@@ -199,11 +217,12 @@ def clf_evaluation(y_test,
         print(confusion)
         print('======================')
     
-    col_names = ['accuracy', 'precision', 'recall', 'f1', 'roc_auc']
-    result = [[acc, pre, rec, f1, auc]]
-    df_values = pd.DataFrame(result, columns=col_names)
-    print(df_values)
-    print('======================')
+    if view_scores :
+        col_names = ['accuracy', 'precision', 'recall', 'f1', 'roc_auc']
+        result = [[acc, pre, rec, f1, auc]]
+        df_values = pd.DataFrame(result, columns=col_names)
+        print(df_values)
+    print('====Done Evaluation====')
     
     return acc, pre, rec, f1, auc
     
@@ -239,10 +258,12 @@ def dummy_selected(X_train=None, X_test=None, df=None):
     return X_train_1hot, X_test_1hot    
 
 
-# TODO : progress bar를 넣으면 좋겠습니다.
-# gridsearchCV 완료했습니다 리뷰 부탁드립니다
-def fit_cv(X_train, y_train, X_test, y_test, scoring='recall', scaler='robust', **kwargs):
+# fit_cv
+def fit_cv(X_train, y_train, X_test, y_test, scaler='RB', scoring='recall', conf_m=True, view_scores=True, draw_cv=True, n_jobs=-1, **kwargs):
     """
+    GridSearchCV. 
+    
+    
     
     Parameters
     ----------
@@ -250,8 +271,14 @@ def fit_cv(X_train, y_train, X_test, y_test, scoring='recall', scaler='robust', 
     scoring : (string), default='recall'
         'recall', 'precision', 'f1'
     
-    scaler : (string), default='robust'
-    .
+    scaler : (string), default='RB(robust)'
+        'No': None, 'SD' : StandardScaler() , 'MM' : MinmaxScaler()
+        
+    conf_m : (bool), default=True
+        on-off confusion matrix
+        
+    view_scores : (bool), default=True
+        on-off each scores
     
     Return
     ----------
@@ -260,21 +287,24 @@ def fit_cv(X_train, y_train, X_test, y_test, scoring='recall', scaler='robust', 
     
     
     """
-
-    scaler_selected = [smplr_tuple[1] for idx, smplr_tuple in enumerate(scalers) if smplr_tuple[0] == scaler][0]
+    cv_list = []
+    cv_estimators = []
+    st_time = time.time()
+    
+    scaler_selected = [one[1] for one in scalers if one[0] == scaler][0]
     
     # Pipelines
-    lr_pipe = Pipeline([("scaler", scaler_selected), ("clf", clfs[0][1])])
+    lr_pipe = Pipeline([("scaler", scaler_selected), ("clf", clfs[0][1])], verbose=True)
     dt_pipe = Pipeline([("scaler", scaler_selected), ("clf", clfs[1][1])])
     rf_pipe = Pipeline([("scaler", scaler_selected), ("clf", clfs[2][1])])
     lgbm_pipe = Pipeline([("scaler", scaler_selected), ("clf", clfs[3][1])])
     svm_pipe = Pipeline([("scaler", scaler_selected), ("clf", clfs[4][1])])
 
-    lr_CV = GridSearchCV(lr_pipe, lr_params, cv=5, scoring=scoring)
-    dt_CV = GridSearchCV(dt_pipe, dt_params, cv=5, scoring=scoring)
-    rf_CV = GridSearchCV(rf_pipe, rf_params, cv=5, scoring=scoring)
-    lgbm_CV = GridSearchCV(lgbm_pipe, lgbm_params, cv=5, scoring=scoring)
-    svc_CV = GridSearchCV(svm_pipe, svc_params, cv=5, scoring=scoring)
+    lr_CV = GridSearchCV(lr_pipe, lr_params, cv=5, scoring=scoring, n_jobs=n_jobs)
+    dt_CV = GridSearchCV(dt_pipe, dt_params, cv=5, scoring=scoring, verbose=2, n_jobs=n_jobs)
+    rf_CV = GridSearchCV(rf_pipe, rf_params, cv=5, scoring=scoring, verbose=2, n_jobs=n_jobs)
+    lgbm_CV = GridSearchCV(lgbm_pipe, lgbm_params, cv=5, scoring=scoring, verbose=2, n_jobs=n_jobs)
+    svc_CV = GridSearchCV(svm_pipe, svc_params, cv=5, scoring=scoring, verbose=2, n_jobs=n_jobs)
 
     CVs = [lr_CV, dt_CV, rf_CV, lgbm_CV, svc_CV]
 
@@ -282,12 +312,15 @@ def fit_cv(X_train, y_train, X_test, y_test, scoring='recall', scaler='robust', 
 
     for idx, cv in enumerate(CVs):
         cv.fit(X_train, y_train)
+        
+        cv_list.append(cv.best_estimator_)
+        cv_estimators.append([cv.best_estimator_[0], cv.best_estimator_[1]])
 
         y_pred_train = cv.predict(X_train)
         y_pred_test = cv.predict(X_test)
 
-        acc_tr, pre_tr, rec_tr, f1_tr, auc_tr = clf_evaluation(y_train, y_pred_train, **kwargs)
-        acc_te, pre_te, rec_te, f1_te, auc_te = clf_evaluation(y_test, y_pred_test, **kwargs)
+        acc_tr, pre_tr, rec_tr, f1_tr, auc_tr = clf_evaluation(y_train, y_pred_train, conf_m=conf_m, view_scores=view_scores, **kwargs)
+        acc_te, pre_te, rec_te, f1_te, auc_te = clf_evaluation(y_test, y_pred_test, conf_m=conf_m, view_scores=view_scores, **kwargs)
 
         result = {'classifier' : clfs[idx][0],
                   'train accuracy' : acc_tr,
@@ -303,16 +336,29 @@ def fit_cv(X_train, y_train, X_test, y_test, scoring='recall', scaler='robust', 
 
         result_df = result_df.append(result, ignore_index=True)
         
+        
+        # 히트맵
+        conf_mtx = confusion_matrix(y_test, y_pred_test)
+        plt.figure(figsize=(6,4))
+        plt.title(f"< {clfs[idx][0]} >")
+        sns.heatmap(conf_mtx, annot=True, yticklabels=["No_act", "Yes_act"], xticklabels=["No_pred", "Yes_pred"])
+        plt.show()
+        
+    print('Fit time :', round((time.time() - st_time) / 60, 2), 'min')
+    
+    if draw_cv:
+        draw_roc_curve(cv_list, cv_estimators, X_test, y_test)
+        
     result_df
-    return result_df
+    return cv_list, result_df
     
     
 # TODO : 그래프도 보여주게 만들기    
 def draw_roc_curve(models, model_names, X_test, y_test):
     plt.figure(figsize=(10,10))
     
-    for idx in range(len(models)):
-        pred = models[idx][1].predict_proba(X_test)[:, 1]
+    for idx in range(len(models)-1):
+        pred = models[idx].predict_proba(X_test)[:, 1]
         fpr, tpr, thresholds = roc_curve(y_test, pred)
         plt.plot(fpr, tpr, label=model_names[idx])
         
@@ -339,7 +385,7 @@ def draw_roc_curve(models, model_names, X_test, y_test):
 # (현수) 일단은 우리가 할 모델이 5개 (LogiReg, DecTree, RandFor, LGBM, SVC)니까, 각 1줄씩 5줄로 돌린다고 생각, 결과 낸 후 코드 효율화 추후 고민 제안 
 # (dk) 확인!
 
-class __ClfSwitcher(BaseEstimator):
+class ClfSwitcher(BaseEstimator):
     def __init__(self, estimator = LogisticRegression(random_state=13)):
         """
         estimator : estimator
@@ -419,43 +465,3 @@ def __fit_cross_validation(X_train, y_train, scoring='recall',*kwargs):
     CV.fit(X_train, y_train)
     
     return CV
-
-
-
-def get_result(model, X_train, y_train, X_test, y_test):
-    model.fit(X_train, y_train)
-    pred = model.predict(X_test)
-    
-    return get_clf_eval(y_test, pred)
-
-
-def get_result_pd(models, model_names, X_train, y_train, X_test, y_test):
-    col_names = ['accuracy', 'precision', 'recall', 'f1', 'roc_auc']
-    tmp = []
-    
-    for model in models:
-        tmp.append(get_result(model[1], X_train, y_train, X_test, y_test))
-        
-    return pd.DataFrame(tmp, columns=col_names, index=model_names)
-
-
-    
-def fit_model(models, model_names, X_train, y_train, X_test, y_test):
-    """
-    models : models
-    model_names : model_names
-    X_train : X_train
-    y_train : y_train
-    X_test : X_test
-    y_train : y_train
-    """
-    
-    st_time = time.time()
-
-    results = get_result_pd(models, model_names, X_train, y_train, X_test, y_test)
-
-    print('Finish fitting!')
-    print('Fit time :', time.time() - st_time)
-    print('<Results>')
-    print(results)
-    draw_roc_curve(models, model_names, X_test, y_test)
