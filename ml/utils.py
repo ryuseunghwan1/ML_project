@@ -57,7 +57,7 @@ from sklearn.model_selection import KFold, GridSearchCV
 
 # Sampler
 # ('SMOTENC', SMOTENC(random_state=13)) : for dataset containing numerical and categorical features. only categorical은 안된답니다.
-# 
+#
 
 samplers = [('SMOTE', SMOTE(random_state=13)),
             ('ADASYN', ADASYN(random_state=13)), 
@@ -150,7 +150,7 @@ def fit_sampler(X_train,
     .
     
     """
-    sampler_selected = [smplr_tuple[1] for idx, smplr_tuple in enumerate(samplers) if smplr_tuple[0] == sampler][0]
+    sampler_selected = [one[1] for one in samplers if one[0] == sampler][0]
 
     X_train_over, y_train_over = sampler_selected.fit_resample(X_train, y_train)
 
@@ -253,9 +253,8 @@ def dummy_selected(X_train=None, X_test=None, df=None):
     return X_train_1hot, X_test_1hot    
 
 
-# TODO : progress bar를 넣으면 좋겠습니다.
-# gridsearchCV 완료했습니다 리뷰 부탁드립니다
-def fit_cv(X_train, y_train, X_test, y_test, scaler='RB', scoring='recall', conf_m=True, view_scores=True, draw_cv=True, **kwargs):
+# fit_cv
+def fit_cv(X_train, y_train, X_test, y_test, scaler='RB', scoring='recall', conf_m=True, view_scores=True, draw_cv=True, n_jobs=-1, **kwargs):
     """
     GridSearchCV. 
     
@@ -287,7 +286,7 @@ def fit_cv(X_train, y_train, X_test, y_test, scaler='RB', scoring='recall', conf
     cv_estimators = []
     st_time = time.time()
     
-    scaler_selected = [smplr_tuple[1] for idx, smplr_tuple in enumerate(scalers) if smplr_tuple[0] == scaler][0]
+    scaler_selected = [one[1] for one in scalers if one[0] == scaler][0]
     
     # Pipelines
     lr_pipe = Pipeline([("scaler", scaler_selected), ("clf", clfs[0][1])], verbose=True)
@@ -296,11 +295,11 @@ def fit_cv(X_train, y_train, X_test, y_test, scaler='RB', scoring='recall', conf
     lgbm_pipe = Pipeline([("scaler", scaler_selected), ("clf", clfs[3][1])])
     svm_pipe = Pipeline([("scaler", scaler_selected), ("clf", clfs[4][1])])
 
-    lr_CV = GridSearchCV(lr_pipe, lr_params, cv=5, scoring=scoring)
-    dt_CV = GridSearchCV(dt_pipe, dt_params, cv=5, scoring=scoring, verbose=2)
-    rf_CV = GridSearchCV(rf_pipe, rf_params, cv=5, scoring=scoring, verbose=2)
-    lgbm_CV = GridSearchCV(lgbm_pipe, lgbm_params, cv=5, scoring=scoring, verbose=2)
-    svc_CV = GridSearchCV(svm_pipe, svc_params, cv=5, scoring=scoring, verbose=2)
+    lr_CV = GridSearchCV(lr_pipe, lr_params, cv=5, scoring=scoring, n_jobs=n_jobs)
+    dt_CV = GridSearchCV(dt_pipe, dt_params, cv=5, scoring=scoring, verbose=2, n_jobs=n_jobs)
+    rf_CV = GridSearchCV(rf_pipe, rf_params, cv=5, scoring=scoring, verbose=2, n_jobs=n_jobs)
+    lgbm_CV = GridSearchCV(lgbm_pipe, lgbm_params, cv=5, scoring=scoring, verbose=2, n_jobs=n_jobs)
+    svc_CV = GridSearchCV(svm_pipe, svc_params, cv=5, scoring=scoring, verbose=2, n_jobs=n_jobs)
 
     CVs = [lr_CV, dt_CV, rf_CV, lgbm_CV, svc_CV]
 
