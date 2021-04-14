@@ -257,7 +257,7 @@ def dummy_selected(X_train=None, X_test=None, df=None):
 
 
 # fit_cv
-def fit_cv(X_train, y_train, X_test, y_test, scaler='RB', scoring='recall', conf_m=True, view_scores=True, draw_cv=True, n_jobs=-1, **kwargs):
+def fit_cv(X_train, y_train, X_test, y_test, scaler='RB', scoring='recall', conf_m=False, view_scores=False, draw_cv=True, n_jobs=-1, **kwargs):
     """
     GridSearchCV. 
     
@@ -339,7 +339,7 @@ def fit_cv(X_train, y_train, X_test, y_test, scaler='RB', scoring='recall', conf
         conf_mtx = confusion_matrix(y_test, y_pred_test)
         plt.figure(figsize=(6,4))
         plt.title(f"< {clfs[idx][0]} >")
-        sns.heatmap(conf_mtx, annot=True, yticklabels=["No_act", "Yes_act"], xticklabels=["No_pred", "Yes_pred"])
+        sns.heatmap(conf_mtx, annot=True, yticklabels=["No_act", "Yes_act"], xticklabels=["No_pred", "Yes_pred"], fmt='d')
         plt.show()
         
     print('Fit time :', round((time.time() - st_time) / 60, 2), 'min')
