@@ -24,6 +24,7 @@ import time
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 # model selection
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, confusion_matrix
@@ -331,13 +332,21 @@ def fit_cv(X_train, y_train, X_test, y_test, scaler='RB', scoring='recall', conf
 
         result_df = result_df.append(result, ignore_index=True)
         
+        
+        # 히트맵
+        conf_mtx = confusion_matrix(y_test, y_pred_test)
+        plt.figure(figsize=(6,4))
+        plt.title(f"< {clfs[idx][0]} >")
+        sns.heatmap(conf_mtx, annot=True, yticklabels=["No_act", "Yes_act"], xticklabels=["No_pred", "Yes_pred"])
+        plt.show()
+        
     print('Fit time :', round((time.time() - st_time) / 60, 2), 'min')
     
     if draw_cv:
         draw_roc_curve(cv_list, cv_estimators, X_test, y_test)
         
     result_df
-    return cv_list
+    return cv_list, result_df
     
     
 # TODO : 그래프도 보여주게 만들기    
