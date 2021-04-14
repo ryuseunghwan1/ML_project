@@ -18,7 +18,9 @@ ut.split_train_test(socar_rd_cp)
 # Authors : dokyum <github.com/dockyum>
 #           EbraLim <github.com/EbraLim>
 #           ryuseunghwan1 <github.com/ryuseunghwan1>
-# !pip install imblearn
+
+#!pip install imblearn
+
 
 import time
 import numpy as np
