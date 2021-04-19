@@ -52,7 +52,8 @@ from sklearn.svm import LinearSVC
 from sklearn.svm import SVC
 
 # CV
-from sklearn.model_selection import KFold, GridSearchCV
+from sklearn.model_selection import KFold, GridSearchCV, StratifiedKFold
+
 
 
 # TODO : 스케일러, 모델, 파라미터 세팅
@@ -79,18 +80,26 @@ scalers = [('No', None ),
 clfs = [('LogisticReg', LogisticRegression(random_state=13, max_iter=1000)),
           ('DecisionTree', DecisionTreeClassifier(random_state=13)),
           ('RandomForest', RandomForestClassifier(random_state=13)),
-          ('LightGBM', LGBMClassifier(random_state=13, boost_from_average=False)),
+          ('LightGBM', LGBMClassifier(random_state=13)),
           ('SVC', SVC(random_state=13))]
 
 clf_names = [clf[0] for clf in clfs]
                    
                    
 # parameters
-lr_params = [{'clf__penalty': ['l2']}]                
-dt_params = [{'clf__max_depth' : [None, 2, 3, 4]}]
-rf_params = [{'clf__n_estimators': [1, 5, 10, 20], 'clf__max_depth' : [2, 3, 4, 5, 10, 50, 100]}]
-lgbm_params = [{'clf__n_estimators' : [10, 30, 50, 100], 'clf__num_leaves': [4, 8, 16]}]
-svc_params = [{'clf__kernel': ['poly'], 'clf__C' : [10] }]
+lr_params = [{'clf__penalty': ['l2'], 
+              'clf__class_weight' : [{0: 1, 1: 0.01}, 'balanced']}]                
+dt_params = [{'clf__max_depth' : [None, 2, 3, 4], 
+              'clf__max_features': [None,'sqrt','log2'], 
+              'clf__class_weight' : [{0: 1, 1: 0.01}, 'balanced']}]
+rf_params = [{'clf__n_estimators': [1, 5, 10, 20], 
+              'clf__max_depth' : [2, 3, 4, 5, 10, 50, 100],
+              'clf__class_weight' : [{0: 1, 1: 0.01}, 'balanced','balanced_subsample']}]
+lgbm_params = [{'clf__n_estimators' : [10, 30, 50, 100], 
+                'clf__num_leaves': [4, 8, 16],
+                'clf__class_weight' : [{0: 1, 1: 0.01}, 'balanced']}]
+svc_params = [{'clf__kernel': ['poly', 'rbf'], 
+               'clf__class_weight' : [{0: 1, 1: 0.01}, 'balanced']}]
 
 
 # Done
@@ -223,37 +232,6 @@ def clf_evaluation(y_test,
     print('====Done Evaluation====')
     
     return acc, pre, rec, f1, auc
-    
-
-# TODO : 
-# (현수) df를 받는 이유가 189행의 df.columns 때문인 것 같은데, 맞다면 여기에 X_train를 쓰고 df는 지우는 게 받는 인수 최소화하여 효율적일 것 같아 제안
-# (dk) 해당 파트 미완성으로 승환님께 전달 => train. 
-# (승환) : 
-def dummy_selected(X_train=None, X_test=None, df=None):
-    """
-    train, test
-
-    Parameters
-    ----------
-    X_train : 해당 df의 train data
-    X_test : 해당 df의 test data
-    """
-    
-    cat_features = ['car_model', 'sharing_type', 'age_group',
-           'b2b', 'pf_type', 'start_hour','duration', 'accident_hour',
-           'accident_location', 'acc_type1', 'insurance_site_aid_YN', 'police_site_aid_YN',
-           'total_prsn_cnt']
-
-    dum_features = [feature for feature in cat_features if feature in list(X_train.columns)]
-
-    X_train_1hot = pd.get_dummies(X_train, columns=dum_features)
-    X_test_1hot = pd.get_dummies(X_test, columns=dum_features)
-    
-    print('get dummies!')
-    print('X_train_1hot : ', X_train_1hot.shape)
-    print('X_test_1hot : ', X_test_1hot.shape)
-    
-    return X_train_1hot, X_test_1hot    
 
 
 # fit_cv
@@ -293,16 +271,18 @@ def fit_cv(X_train, y_train, X_test, y_test, scaler='RB', scoring='recall', conf
     
     # Pipelines
     lr_pipe = Pipeline([("scaler", scaler_selected), ("clf", clfs[0][1])], verbose=True)
-    dt_pipe = Pipeline([("scaler", scaler_selected), ("clf", clfs[1][1])])
-    rf_pipe = Pipeline([("scaler", scaler_selected), ("clf", clfs[2][1])])
-    lgbm_pipe = Pipeline([("scaler", scaler_selected), ("clf", clfs[3][1])])
-    svm_pipe = Pipeline([("scaler", scaler_selected), ("clf", clfs[4][1])])
-
-    lr_CV = GridSearchCV(lr_pipe, lr_params, cv=5, scoring=scoring, n_jobs=n_jobs)
-    dt_CV = GridSearchCV(dt_pipe, dt_params, cv=5, scoring=scoring, verbose=2, n_jobs=n_jobs)
-    rf_CV = GridSearchCV(rf_pipe, rf_params, cv=5, scoring=scoring, verbose=2, n_jobs=n_jobs)
-    lgbm_CV = GridSearchCV(lgbm_pipe, lgbm_params, cv=5, scoring=scoring, verbose=2, n_jobs=n_jobs)
-    svc_CV = GridSearchCV(svm_pipe, svc_params, cv=5, scoring=scoring, verbose=2, n_jobs=n_jobs)
+    dt_pipe = Pipeline([("scaler", scaler_selected), ("clf", clfs[1][1])], verbose=True)
+    rf_pipe = Pipeline([("scaler", scaler_selected), ("clf", clfs[2][1])], verbose=True)
+    lgbm_pipe = Pipeline([("scaler", scaler_selected), ("clf", clfs[3][1])], verbose=True)
+    svm_pipe = Pipeline([("scaler", scaler_selected), ("clf", clfs[4][1])], verbose=True)
+    
+    skfold = StratifiedKFold(n_splits=5, random_state=13, shuffle=True)
+    
+    lr_CV = GridSearchCV(lr_pipe, lr_params, cv=skfold, scoring=scoring, n_jobs=n_jobs)
+    dt_CV = GridSearchCV(dt_pipe, dt_params, cv=skfold, scoring=scoring, n_jobs=n_jobs)
+    rf_CV = GridSearchCV(rf_pipe, rf_params, cv=skfold, scoring=scoring, n_jobs=n_jobs)
+    lgbm_CV = GridSearchCV(lgbm_pipe, lgbm_params, cv=skfold, scoring=scoring, n_jobs=n_jobs)
+    svc_CV = GridSearchCV(svm_pipe, svc_params, cv=skfold, scoring=scoring, n_jobs=n_jobs)
 
     CVs = [lr_CV, dt_CV, rf_CV, lgbm_CV, svc_CV]
 
@@ -463,3 +443,34 @@ def __fit_cross_validation(X_train, y_train, scoring='recall',*kwargs):
     CV.fit(X_train, y_train)
     
     return CV
+
+
+# TODO : 사용하지 않는 함수(?)
+# (현수) df를 받는 이유가 189행의 df.columns 때문인 것 같은데, 맞다면 여기에 X_train를 쓰고 df는 지우는 게 받는 인수 최소화하여 효율적일 것 같아 제안
+# (dk) 해당 파트 미완성으로 승환님께 전달 => train. 
+# (승환) : 
+def dummy_selected(X_train=None, X_test=None, df=None):
+    """
+    train, test
+
+    Parameters
+    ----------
+    X_train : 해당 df의 train data
+    X_test : 해당 df의 test data
+    """
+    
+    cat_features = ['car_model', 'sharing_type', 'age_group',
+           'b2b', 'pf_type', 'start_hour','duration', 'accident_hour',
+           'accident_location', 'acc_type1', 'insurance_site_aid_YN', 'police_site_aid_YN',
+           'total_prsn_cnt']
+
+    dum_features = [feature for feature in cat_features if feature in list(X_train.columns)]
+
+    X_train_1hot = pd.get_dummies(X_train, columns=dum_features)
+    X_test_1hot = pd.get_dummies(X_test, columns=dum_features)
+    
+    print('get dummies!')
+    print('X_train_1hot : ', X_train_1hot.shape)
+    print('X_test_1hot : ', X_test_1hot.shape)
+    
+    return X_train_1hot, X_test_1hot    
