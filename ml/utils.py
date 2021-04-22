@@ -90,7 +90,7 @@ clf_names = [clf[0] for clf in clfs]
 
 lr_params = [{'clf__penalty': ['l2'], 
               'clf__class_weight' : [{0: 0.01, 1: 1.0}, {0: 0.005, 1: 1},'balanced']}]                
-dt_params = [{'clf__max_depth' : [None, 2, 3, 4], 
+dt_params = [{'clf__max_depth' : [3, 4, 6, 8, 10, 30], 
               'clf__max_features': [None,'sqrt','log2'], 
               'clf__class_weight' : [{0: 0.01, 1: 1.0}, {0: 0.005, 1: 1},'balanced']}]
 rf_params = [{'clf__n_estimators': [50, 100, 200, 400], 
