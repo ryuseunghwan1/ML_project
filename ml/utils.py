@@ -98,10 +98,17 @@ rf_params = [{'clf__n_estimators': [50, 100, 200, 400],
               'clf__class_weight' : [{0: 0.01, 1: 1.0}, {0: 0.005, 1: 1},'balanced']}]
 lgbm_params = [{'clf__n_estimators' : [50, 100, 200, 400], 
                 'clf__num_leaves': [4, 8, 16],
+<<<<<<< HEAD
                 'clf__class_weight' : [{0: 0.01, 1: 1.0}, {0: 0.005, 1: 1},'balanced']}]
 svc_params = [{'clf__kernel': ['rbf'], 
                'clf__class_weight' : ['balanced'],
                'clf__C' : [0.1, 1.0]}]
+=======
+                'clf__class_weight' : [{0: 0.01, 1: 1.0}, {0: 1, 1: 0.005},'balanced']}]
+svc_params = [{'clf__kernel': ['poly', 'rbf'], 
+               'clf__class_weight' : [{0: 0.01, 1: 1.0}, {0: 1, 1: 0.005},'balanced'],
+               'clf__C' : [0.1, 1.0, 3.0]}]
+>>>>>>> 57944b7e51b321b2bbaf246150c6925e61853fa1
 
 
           
