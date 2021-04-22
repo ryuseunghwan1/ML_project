@@ -89,19 +89,19 @@ clf_names = [clf[0] for clf in clfs]
 # parameters
 
 lr_params = [{'clf__penalty': ['l2'], 
-              'clf__class_weight' : [{0: 0.01, 1: 1.0}, {0: 1, 1: 0.005},'balanced']}]                
+              'clf__class_weight' : [{0: 0.01, 1: 1.0}, {0: 0.005, 1: 1},'balanced']}]                
 dt_params = [{'clf__max_depth' : [None, 2, 3, 4], 
               'clf__max_features': [None,'sqrt','log2'], 
-              'clf__class_weight' : [{0: 0.01, 1: 1.0}, {0: 1, 1: 0.005},'balanced']}]
-rf_params = [{'clf__n_estimators': [1, 5, 10, 20], 
-              'clf__max_depth' : [2, 3, 4, 5, 10, 50, 100],
-              'clf__class_weight' : [{0: 0.01, 1: 1.0}, {0: 1, 1: 0.005},'balanced','balanced_subsample']}]
-lgbm_params = [{'clf__n_estimators' : [10, 30, 50, 100], 
+              'clf__class_weight' : [{0: 0.01, 1: 1.0}, {0: 0.005, 1: 1},'balanced']}]
+rf_params = [{'clf__n_estimators': [50, 100, 200, 400], 
+              'clf__max_depth' : [4, 6, 8, 10, 30],
+              'clf__class_weight' : [{0: 0.01, 1: 1.0}, {0: 0.005, 1: 1},'balanced']}]
+lgbm_params = [{'clf__n_estimators' : [50, 100, 200, 400], 
                 'clf__num_leaves': [4, 8, 16],
-                'clf__class_weight' : [{0: 0.01, 1: 1.0}, {0: 1, 1: 0.005},'balanced']}]
-svc_params = [{'clf__kernel': ['poly', 'rbf'], 
-               'clf__class_weight' : [{0: 0.01, 1: 1.0}, {0: 1, 1: 0.005},'balanced']
-               'clf__C' : [0.1, 1.0, 3.0]}]
+                'clf__class_weight' : [{0: 0.01, 1: 1.0}, {0: 0.005, 1: 1},'balanced']}]
+svc_params = [{'clf__kernel': ['rbf'], 
+               'clf__class_weight' : ['balanced'],
+               'clf__C' : [0.1, 1.0]}]
 
 
           
