@@ -100,7 +100,7 @@ lgbm_params = [{'clf__n_estimators' : [10, 30, 50, 100],
                 'clf__num_leaves': [4, 8, 16],
                 'clf__class_weight' : [{0: 0.01, 1: 1.0}, {0: 1, 1: 0.005},'balanced']}]
 svc_params = [{'clf__kernel': ['poly', 'rbf'], 
-               'clf__class_weight' : [{0: 0.01, 1: 1.0}, {0: 1, 1: 0.005},'balanced']
+               'clf__class_weight' : [{0: 0.01, 1: 1.0}, {0: 1, 1: 0.005},'balanced'],
                'clf__C' : [0.1, 1.0, 3.0]}]
 
 
