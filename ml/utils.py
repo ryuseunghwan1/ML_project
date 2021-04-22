@@ -87,21 +87,24 @@ clf_names = [clf[0] for clf in clfs]
                    
                    
 # parameters
+
 lr_params = [{'clf__penalty': ['l2'], 
-              'clf__class_weight' : [{0: 1, 1: 0.01}, 'balanced']}]                
+              'clf__class_weight' : [{0: 0.01, 1: 1.0}, {0: 1, 1: 0.005},'balanced']}]                
 dt_params = [{'clf__max_depth' : [None, 2, 3, 4], 
               'clf__max_features': [None,'sqrt','log2'], 
-              'clf__class_weight' : [{0: 1, 1: 0.01}, 'balanced']}]
+              'clf__class_weight' : [{0: 0.01, 1: 1.0}, {0: 1, 1: 0.005},'balanced']}]
 rf_params = [{'clf__n_estimators': [1, 5, 10, 20], 
               'clf__max_depth' : [2, 3, 4, 5, 10, 50, 100],
-              'clf__class_weight' : [{0: 1, 1: 0.01}, 'balanced','balanced_subsample']}]
+              'clf__class_weight' : [{0: 0.01, 1: 1.0}, {0: 1, 1: 0.005},'balanced','balanced_subsample']}]
 lgbm_params = [{'clf__n_estimators' : [10, 30, 50, 100], 
                 'clf__num_leaves': [4, 8, 16],
-                'clf__class_weight' : [{0: 1, 1: 0.01}, 'balanced']}]
+                'clf__class_weight' : [{0: 0.01, 1: 1.0}, {0: 1, 1: 0.005},'balanced']}]
 svc_params = [{'clf__kernel': ['poly', 'rbf'], 
-               'clf__class_weight' : [{0: 1, 1: 0.01}, 'balanced']}]
+               'clf__class_weight' : [{0: 0.01, 1: 1.0}, {0: 1, 1: 0.005},'balanced']
+               'clf__C' : [0.1, 1.0, 3.0]}]
 
 
+          
 # Done
 def split_train_test(df):
     """
@@ -330,7 +333,7 @@ def fit_cv(X_train, y_train, X_test, y_test, scaler='RB', scoring='recall', conf
     result_df
     return cv_list, result_df
     
-    
+
 # TODO : 그래프도 보여주게 만들기    
 def draw_roc_curve(models, model_names, X_test, y_test):
     plt.figure(figsize=(10,10))
@@ -347,7 +350,67 @@ def draw_roc_curve(models, model_names, X_test, y_test):
     plt.show()
 
 
+def fit_cv_one(X_train, y_train, X_test, y_test, scaler='RB', estimator='LogisticReg', scoring='recall', conf_m=False, view_scores=False, draw_cv=True, n_jobs=-1, **kwargs):
+    """
+    GridsearchCV only one estimator.
+    Return best_estimator
     
+    
+    
+    """
+    st_time = time.time()
+    
+    scaler_selected = [one[1] for one in scalers if one[0] == scaler][0]
+    clf_selected = [alg[1] for alg in clfs if alg[0] == estimator][0]
+    
+    pipe_selected = Pipeline([('scaler',scaler_selected), ('clf',clf_selected)])
+    param_selected = [parm[1] for parm in all_params if parm[0] == estimator][0]
+
+    skfold = StratifiedKFold(n_splits=5, random_state=13, shuffle=True)
+    
+    cv = GridSearchCV(pipe_selected, param_selected, cv=skfold, scoring=scoring, n_jobs=n_jobs)
+    
+    cv.fit(X_train, y_train)
+        
+    y_pred_train = cv.predict(X_train)
+    y_pred_test = cv.predict(X_test)
+
+    acc_tr, pre_tr, rec_tr, f1_tr, auc_tr = clf_evaluation(y_train, y_pred_train, conf_m=conf_m, view_scores=view_scores, **kwargs)
+    acc_te, pre_te, rec_te, f1_te, auc_te = clf_evaluation(y_test, y_pred_test, conf_m=conf_m, view_scores=view_scores, **kwargs)
+
+    result = {'classifier' : estimator,
+              'train accuracy' : acc_tr,
+              'train precision' : pre_tr,
+              'train recall' : rec_tr,
+              'train f1': f1_tr,
+              'train auc' : auc_tr,
+              'test accuracy' : acc_te,
+              'test precision' : pre_te,
+              'test recall' : rec_te,
+              'test f1' : f1_te,
+              'test auc' : auc_te }
+    
+    result_df = pd.DataFrame(columns=['classifier', 'train accuracy', 'train precision', 'train recall', 'train f1','train auc','test accuracy','test precision','test recall','test f1','test auc'])
+    
+    result_df = result_df.append(result, ignore_index=True)
+        
+        
+    # 히트맵
+    conf_mtx = confusion_matrix(y_test, y_pred_test)
+    plt.figure(figsize=(6,4))
+    plt.title(f"< {estimator} >")
+    sns.heatmap(conf_mtx, annot=True, yticklabels=["No_act", "Yes_act"], xticklabels=["No_pred", "Yes_pred"], fmt='d')
+    plt.show()
+        
+    print('Fit time :', round((time.time() - st_time) / 60, 2), 'min')
+    
+    #     if draw_cv:
+    #         draw_roc_curve(cv_list, cv_estimators, X_test, y_test)
+        
+    result_df
+    return cv , result_df    
+    
+
 # ClfSwitcher() : 포기
 
 # Pipeline에 Classifier Switcher Class를 만들어 여러 모델을 한번에 학습시키려 시도
