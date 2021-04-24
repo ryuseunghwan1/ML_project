@@ -55,13 +55,7 @@ from sklearn.svm import SVC
 from sklearn.model_selection import KFold, GridSearchCV, StratifiedKFold
 
 
-
-# TODO : 스케일러, 모델, 파라미터 세팅
-#        샘플러 추가?
-
 # Sampler
-# ('SMOTENC', SMOTENC(random_state=13)) : for dataset containing numerical and categorical features. only categorical은 안된답니다.
-#
 
 samplers = [('SMOTE', SMOTE(random_state=13)),
             ('ADASYN', ADASYN(random_state=13)), 
@@ -85,7 +79,7 @@ clfs = [('LogisticReg', LogisticRegression(random_state=13, max_iter=1000)),
 
 clf_names = [clf[0] for clf in clfs]
                    
-                   
+           
 # parameters
 
 lr_params = [{'clf__penalty': ['l2'], 
@@ -104,7 +98,7 @@ svc_params = [{'clf__kernel': ['rbf'],
                'clf__C' : [0.1, 1.0]}]
 
           
-# Done
+# X_Train, X_Test, y_train, y_test 데이터 분리
 def split_train_test(df):
     """
     Split sc dataset into train and test subsets easily.
@@ -138,7 +132,7 @@ def split_train_test(df):
     return X_train, X_test, y_train, y_test
 
 
-# TODO : 샘플러 선택기
+# 선택한 Sampler 적용하여 데이터 샘플링
 def fit_sampler(X_train, 
                 y_train, 
                 sampler='SMOTE'):
@@ -149,10 +143,10 @@ def fit_sampler(X_train,
     Parameters
     ----------
     X_train : 
-        Truth labels
+        Train data of features
         
     y_train : 
-        Predicted labels
+        Train data of labels
         
     sampler : (string), default='SMOTE'
         'ADASYN', 'BorderlineSMOTE', 'KMeansSMOTE', 'SVMSMOTE', 'RandomOverSampler'
@@ -249,8 +243,8 @@ def fit_cv(X_train, y_train, X_test, y_test, scaler='RB', scoring='recall', conf
     scoring : (string), default='recall'
         'recall', 'precision', 'f1'
     
-    scaler : (string), default='RB(robust)'
-        'No': None, 'SD' : StandardScaler() , 'MM' : MinmaxScaler()
+    scaler : (string), default='RB'
+        'No': None, 'SD' : StandardScaler(), 'MM' : MinmaxScaler(), 'RB' : RobustScaler()
         
     conf_m : (bool), default=True
         on-off confusion matrix
@@ -261,7 +255,8 @@ def fit_cv(X_train, y_train, X_test, y_test, scaler='RB', scoring='recall', conf
     Return
     ----------
     
-    result_df : (DataFrame), 
+    cv_list : list of best estimators resulted from cross-validations.
+    result_df : dataframe of cross-validation results.
     
     
     """
@@ -333,7 +328,7 @@ def fit_cv(X_train, y_train, X_test, y_test, scaler='RB', scoring='recall', conf
     return cv_list, result_df
     
 
-# TODO : 그래프도 보여주게 만들기    
+# roc_curve 그래프 만들기
 def draw_roc_curve(models, model_names, X_test, y_test):
     plt.figure(figsize=(10,10))
     
@@ -409,7 +404,9 @@ def fit_cv_one(X_train, y_train, X_test, y_test, scaler='RB', estimator='Logisti
     result_df
     return cv , result_df    
     
-
+######################################################################################################################
+# Pending
+######################################################################################################################
 # ClfSwitcher() : 포기
 
 # Pipeline에 Classifier Switcher Class를 만들어 여러 모델을 한번에 학습시키려 시도
@@ -507,10 +504,6 @@ def __fit_cross_validation(X_train, y_train, scoring='recall',*kwargs):
     return CV
 
 
-# TODO : 사용하지 않는 함수(?)
-# (현수) df를 받는 이유가 189행의 df.columns 때문인 것 같은데, 맞다면 여기에 X_train를 쓰고 df는 지우는 게 받는 인수 최소화하여 효율적일 것 같아 제안
-# (dk) 해당 파트 미완성으로 승환님께 전달 => train. 
-# (승환) : 
 def dummy_selected(X_train=None, X_test=None, df=None):
     """
     train, test
