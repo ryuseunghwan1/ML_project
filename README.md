@@ -3,7 +3,7 @@
 <img src="./asset/down3.jpg" width="800px" height="300px" title="px(픽셀) 크기 설정" alt="Canada_Car"></img><br/>
 
 ## 1. Socar Introduction
-<img src="./asset/down2.png" width="800px" height="300px" title="px(픽셀) 크기 설정" alt="Canada_Car"></img><br/>
+<img src="./asset/down2.png" width="1200px" height="400px" title="px(픽셀) 크기 설정" alt="Canada_Car"></img><br/>
 
 - 매년 증가하는 가입자 수와 매출액만큼 socar 보험사기 역시 끊이질 않고 있음. 데이터를 기반으로 모델링을 구현하고 그 중 신뢰도가 가장 높은 모델을 선정해볼 예정. 
 ## 2. 개요
@@ -61,3 +61,15 @@
 <img src="./asset/conclusion.png" width="700px" height="200px" title="px(픽셀) 크기 설정" alt="Canada_Car"></img><br/>
 - 총 5가지를 모델로 다음과 같은 성과를 거두었으며, 그 중에서도 SVMSMOTE 샘플링을 이용한 LogisticReg 모델이 가장 높은 성능을 보임.
 
+## 4. Reference
+- The scoring parameter: defining model evaluation rules
+    - https://scikit-learn.org/stable/modules/model_evaluation.html#scoring-parameter
+- GridSearchCV 
+    - https://studychfhd.tistory.com/227
+## 5. 함께한 분석가
+- 김도겸
+    - GitHub : <github.com/dockyum>
+- 임현수
+    - GitHub : <github.com/EbraLim>
+- 류승환
+    - GitHub : <github.com/ryuseunghwan1>
