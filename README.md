@@ -1,4 +1,4 @@
-# 쏘카 보험 사기 찾기
+# Imbalanced Data : Socar Fraud Detection
 
 <img src="./asset/down3.jpg" width="800px" height="300px" title="px(픽셀) 크기 설정" alt="Canada_Car"></img><br/>
 
