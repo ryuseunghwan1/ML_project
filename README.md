@@ -9,7 +9,7 @@
 ## 2. 개요
 ### 2-1. 데이터 수집 
 
-- 데이터는 카쉐어링업체 SOCAR로부터 제공받았으며, 16000 rows X 35 columns의 데이터로 구성되어 있음.
+- 데이터는 카쉐어링업체 SOCAR로부터 제공받았으며, 16000 rows X 25 columns의 데이터로 구성되어 있음.
 - 데이터는 socar로부터 제공받은 데이터로 column들을 전부 비공개로 수정하였음.
 
 ### 2-2. 데이터 탐색
@@ -47,8 +47,27 @@
 - _LGBM_
 - _SVM_
 ### 3-4. HyperParameter
-<img src="./asset/parameter.png" width="600px" height="400px" title="px(픽셀) 크기 설정" alt="Canada_Car"></img><br/>
-
+- 5가지의 알고리즘
+    - _Logistic Regression_
+    - _Decision Tree_
+        - max_depth : [3, 4, 6, 8, 10, 30]
+        - max_features : [None, sqrt, log2]
+    - _Random Forest_
+        - n_estimators : [50, 100, 200, 400]
+        - max_depth : [4, 6, 8, 10, 30]
+    - _Light GBM_
+        - n_estimators : [50, 100, 200, 400]
+        - num_leaves : [4, 8, 16]
+    - _Support Vector Classification_
+        - C : [0.1, 1.0] 
+- 2가지 경우
+    - class_weight 튜닝
+        - 미적용
+        - 적용 : ([
+            {0:0.01, 1:1.0},
+            {0:0.005, 1:1},
+            'balanced'
+        ])
 ### 3-5. 성능 비교 
 <img src="./asset/process.png" width="700px" height="400px" title="px(픽셀) 크기 설정" alt="Canada_Car"></img><br/>
 
