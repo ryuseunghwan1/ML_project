@@ -1,4 +1,4 @@
-# Imbalanced Data : Socar Fraud Detection
+# Socar Fraud Detection
 
 <img src="./asset/down3.jpg" width="800px" height="300px" title="px(픽셀) 크기 설정" alt="Canada_Car"></img><br/>
 
