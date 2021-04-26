@@ -33,7 +33,7 @@
     - (결측치가 과하게 많이 들어있는 컬럼같은 경우 유지한 것과 삭제한 것의 경우를 비교해볼 수 있도록 나눠서 모델링 진행.)
 - _OneHotEncoding 적용/미적용_ 
     - (원핫인코딩 역시 적용한 경우, 미적용한 결과를 비교해볼 수 있도록 나눠서 모델링 진행.)
-- Sampling_ 
+- _Sampling_ 
     - (SMOTE, BorderlineSMOTE, SVMSMOTE, ADASYN, RandomOverSampling)
     - UnderSampling은 라벨데이터의 갯수가 너무 적어 적용시키기에 적합하지 않다고 판단.
 - _Scaling_ 
