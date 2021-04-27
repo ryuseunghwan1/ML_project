@@ -116,14 +116,14 @@ def split_train_test(df):
     .
 
     """
-    train_set = df[df['test_set'] == 0]
-    test_set = df[df['test_set'] == 1]
+    train_set = df[df['c_25'] == 0]
+    test_set = df[df['c_25'] == 1]
 
-    X_train = train_set.drop(['test_set','fraud_YN'], axis=1)
-    y_train = train_set['fraud_YN']
+    X_train = train_set.drop(['c_25','c_1'], axis=1)
+    y_train = train_set['c_1']
 
-    X_test = test_set.drop(['test_set', 'fraud_YN'], axis=1)
-    y_test = test_set['fraud_YN']
+    X_test = test_set.drop(['c_25', 'c_1'], axis=1)
+    y_test = test_set['c_1']
     
     print('==Split Result==')
     print('y_train : ', list(map(lambda x: x.tolist(), np.unique(y_train, return_counts=True))))
