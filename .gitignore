@@ -133,3 +133,6 @@ datas/
 
 # DS_Store
 .DS_Store
+
+# result
+result/
