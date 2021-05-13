@@ -1,94 +1,109 @@
-# < Socar Fraud Detection >
+[Machine Learning Project]  
+Fraud Detection Modeling (with SOCAR data)
+=========================
+## 0. 요약
+```
+1) 프로젝트 시행 목적
+    - 자동차 보험 사기 탐지 모델을 통해 보험 사기 가능성이 높은 유저들을 사전에 효과적으로 필터링하기 위함    
+        → 보험 사기를 판단하기 위한 실사 대상 건수를 줄이는 효과가 있을 것으로 기대됨
+2) 프로젝트 시행 결과
+    - 가장 우수한 모델의 accuracy는 0.68, recall은 0.86 수준으로 나타남
+```
 
-<img src="./asset/down3.jpg" width="800px" height="300px" title="px(픽셀) 크기 설정" alt="Canada_Car"></img><br/>
+## 1. 소개
+### 1) 주제
+* 자동차 보험 사기 탐지 모델링
+### 2) 기대효과
+* 보험 사기일 가능성이 높은 건들을 사전에 필터링, 실사가 필요한 총 대상 건수 감소에 따른 실사 효율성 향상
+### 3) 데이터 출처
+* SOCAR로부터 제공받았으며, 데이터 구조 등 데이터 관련 정보들은 일체 비공개    
+----
 
-## 1. Socar Introduction
-<img src="./asset/down2.png" width="1200px" height="400px" title="px(픽셀) 크기 설정" alt="Canada_Car"></img><br/>
+## 2. 진행 프로세스
+![process_overall](https://user-images.githubusercontent.com/78459305/117934187-5a0b5080-b33d-11eb-8b37-91f8622102b9.png)
+----
 
-- 매년 증가하는 가입자 수와 매출액만큼 socar 보험사기 역시 끊이질 않고 있음. 데이터를 기반으로 모델링을 구현하고 그 중 신뢰도가 가장 높은 모델을 선정해볼 예정. 
-## 2. 개요
-### 2-1. 데이터 수집 
-
-- 데이터는 카쉐어링업체 SOCAR로부터 제공받았으며, 16000 rows X 25 columns의 데이터로 구성되어 있음.
-- 데이터는 socar로부터 제공받은 데이터로 column들을 전부 비공개로 수정하였음.
-
-### 2-2. 데이터 탐색
-- 이상치 데이터 삭제 
-    - 우리가 받은 socar 데이터에는 11:00 ~ 13:00 사이에 6시간 미만으로 대여했는데 21시에 사고가 발생하는 등 이러한 데이터들이 41개 있었음. 전부 삭제하고 진행.
-- 데이터 불균형
-
-<img src="./asset/preprocessing.png" width="500px" height="400px" title="px(픽셀) 크기 설정" alt="Canada_Car"></img><br/>
-
-==>  극심한 데이터 불균형 문제는 뒤에서 다양한 샘플링 적용.
-
-## 3. 진행 과정
-
-### 3-1. 구조도
-<img src="./asset/architecture.png" width="600px" height="600px" title="px(픽셀) 크기 설정" alt="Canada_Car"></img><br/>
-
-### 3-2. 데이터 전처리
-- _이상치 삭제_  
-    - (대여시간/대여기간/사고시간이 서로 맞지 않는 경우)
-- _NULL값(결측치) 유지/삭제_ 
-    - (결측치가 과하게 많이 들어있는 컬럼같은 경우 유지한 것과 삭제한 것의 경우를 비교해볼 수 있도록 나눠서 모델링 진행.)
-- _OneHotEncoding 적용/미적용_ 
-    - (원핫인코딩 역시 적용한 경우, 미적용한 결과를 비교해볼 수 있도록 나눠서 모델링 진행.)
-- _Sampling_ 
-    - (SMOTE, BorderlineSMOTE, SVMSMOTE, ADASYN, RandomOverSampling)
-    - UnderSampling은 라벨데이터의 갯수가 너무 적어 적용시키기에 적합하지 않다고 판단.
-- _Scaling_ 
-    - (MinMax/Standard/Robust)
+## 3. 각 프로세스별 상세설명
+### 1) raw data 수집
+* SOCAR로부터 제공받은 raw data만을 사용
 
 
-### 3-3. Models
-- _LogisticRegression_
-- _Decision tree_
-- _RandomForest_
-- _LGBM_
-- _SVM_
-### 3-4. HyperParameter
-- 5가지의 알고리즘
-    - _Logistic Regression_
-    - _Decision Tree_
-        - max_depth : [3, 4, 6, 8, 10, 30]
-        - max_features : [None, sqrt, log2]
-    - _Random Forest_
-        - n_estimators : [50, 100, 200, 400]
-        - max_depth : [4, 6, 8, 10, 30]
-    - _Light GBM_
-        - n_estimators : [50, 100, 200, 400]
-        - num_leaves : [4, 8, 16]
-    - _Support Vector Classification_
-        - C : [0.1, 1.0] 
-- 2가지 경우
-    - class_weight 튜닝
-        - 미적용
-        - 적용 : ([
-            {0:0.01, 1:1.0},
-            {0:0.005, 1:1},
-            'balanced'
-        ])
-### 3-5. 성능 비교 
-<img src="./asset/process.png" width="700px" height="400px" title="px(픽셀) 크기 설정" alt="Canada_Car"></img><br/>
+### 2) 데이터 전처리 
+#### (1) 틀린 데이터 (wrong data)
+- feature들 간에 논리적으로 앞뒤가 맞지 않는 데이터 일부 존재
+- 논리적으로 합당하지 않은 데이터이므로 이상치(outlier)가 아닌 틀린(wrong) 데이터라고 판단, 제거 후 이후 과정 수행
+#### (2) Null data
+- 우선, 데이터를 전달받을 때 null값은 이미 다른 값으로 대체된 상태였음
+- null data가 과반수 이상인 feature들의 경우, feature를 유지 또는 삭제, 총 2가지 경우에 대해 진행
+#### (3) Sampling
+- 비정상(사기) 라벨 데이터 수가 절대적으로 적어 undersampling은 데이터셋 특성 상 부적합하다고 판단, oversampling만 진행
+- 총 5가지 방법 (SMOTE, BorderlineSMOTE, SVMSMOTE, ADASYN, RandomOverSampling)으로 샘플링 진행
+#### (4) One-hot Encoding
+- 범주 데이터의 경우, 원핫인코딩을 적용 또는 미적용, 총 2가지 경우에 대해 진행
+#### (5) Scaling
+- 연속형 데이터의 경우, feature간 단위 차이에 따른 학습 방해를 예방하기 위해 스케일링 진행
+- 총 4가지 방법 (MinMax, Standard, Robust, None(미적용))으로 스케일링 진행  
 
-### 3-6. 성능 평가 
-- recall을 주요 성능 지표로 두고, recall이 같을 경우 accuracy를 보조지표로 둠.
-- 사용자보단 기업 입장에서 모델을 사용할 경우를 목적으로 하여 recall을 주요 성능 지표로 둠. 
-- 모델이 모든 예측 값을 사기 집단으로 판단하는 것을 방지하고자 accuracy를 보조지표로 둠. 
 
-### 3-7. 모델 검증
-<img src="./asset/conclusion.png" width="700px" height="200px" title="px(픽셀) 크기 설정" alt="Canada_Car"></img><br/>
-- 총 5가지를 모델로 다음과 같은 성과를 거두었으며, 그 중에서도 SVMSMOTE 샘플링을 이용한 LogisticReg 모델이 가장 높은 성능을 보임.
+### 3) 알고리즘 & 하이퍼파라미터 튜닝
+- 총 5가지 모델 사용, 각각의 하이퍼파라미터를 튜닝하며 교차검증 진행
+#### (1) Logistic Regression
+- class_weight: 총 4가지 경우 (none, {0:01, 1:1.0}, {0:0.005, 1:1}, 'balanced')
+#### (2) Support Vector Classification
+- C: 총 2가지 경우 (0.1, 1.0)
+- class_weight: 총 4가지 경우 (none, {0:01, 1:1.0}, {0:0.005, 1:1}, 'balanced')
+#### (3) Light GBM
+- n_estimators: 총 4가지 경우 (50, 100, 200, 400) 
+- num_leaves: 총 3가지 경우 (4, 8, 16) 
+- class_weight: 총 4가지 경우 (none, {0:01, 1:1.0}, {0:0.005, 1:1}, 'balanced') 
+#### (4) Decision Tree
+- max_depth: 총 6가지 경우 (3, 4, 6, 8, 10, 30) 
+- max_features: 총 3가지 경우 (none, sqrt, log2)
+- class_weight: 총 4가지 경우 (none, {0:01, 1:1.0}, {0:0.005, 1:1}, 'balanced')
+#### (5) Random Forest
+- max_depth: 총 5가지 경우 (4, 6, 8, 10, 30)
+- n_estimators: 총 4가지 경우 (50, 100, 200, 400)
+- class_weight: 총 4가지 경우 (none, {0:01, 1:1.0}, {0:0.005, 1:1}, 'balanced')
 
-## 4. Reference
-- The scoring parameter: defining model evaluation rules
-    - https://scikit-learn.org/stable/modules/model_evaluation.html#scoring-parameter
-- GridSearchCV 
-    - https://studychfhd.tistory.com/227
-## 5. 함께한 분석가
-- 김도겸
-    - GitHub : <github.com/dockyum>
-- 임현수
-    - GitHub : <github.com/EbraLim>
-- 류승환
-    - GitHub : <github.com/ryuseunghwan1>
+
+### 4) 모델 성능 평가
+- 상기 조합을 통해 총 800가지 경우에 대해 교차검증 진행 
+- 성능 평가의 지표로 recall을 메인 지표, accuracy를 보조 지표로 사용
+- 전체 사기 건수 중 '사기'라고 탐지하는 건수의 비율 최대화를 목표로 하기 위해 recall을 메인 지표로 사용
+- 한편, 모델이 편향되게 학습되어 지나치게 많은 '사기' 예측을 하는 경우를 방지하고자 accuracy를 보조 지표로 사용
+
+
+### 5) 최적 모델 선정
+- recall이 가장 높은 모델을 선정하였으며, 동일한 recall일 경우 accuracy가 가장 높은 모델 선정
+- 단, label이 2가지 (정상/사기)인 만큼 최저 accuracy를 0.5로 설정  
+  (recall이 충분히 높더라도 accuracy가 0.5 미만인 경우 채택하지 않았다는 의미)
+----
+
+## 4. 결론
+- Null값이 과반수인 열 유지, 원핫인코딩 미적용, 스케일러 미적용, SVMSMOTE로 샘플링, Logistic Regression을 사용하였으며 class_weight를 적용하지 않은 경우가 가장 성과가 우수하였음
+- recall이 **0.8571**, accuracy는 **0.6844**로 나타남
+----
+
+## 5. 추후 보완점
+- 이번 프로젝트에서는 최적의 모델 도출을 위해 다양한 알고리즘 적용 및 하이퍼파라미터 튜닝에 초점을 두어 진행하였음
+- 상대적으로 데이터 전처리를 통한 성능 개선 시도는 부족했으며, 추후 진행 시 null값 처리 등 데이터 전처리에 더 초점을 두어 진행 예정
+----
+
+## 6. 멤버 & 수행업무
+#### 1) [김도겸](https://github.com/dockyum)
+  * **데이터 프로세싱**: EDA, 파이프라인 코드 작성 및 관리, 할당된 부분의 교차검증 진행
+  * **깃허브 폴더구조 관리**
+  * **리뷰**: 전처리 방법 및 하이퍼파라미터 관련 논의
+  * **발표 및 문서화**: 프레젠테이션 자료 작성 및 발표
+#### 2) [류승환](https://github.com/ryuseunghwan1)
+  * **데이터 프로세싱**: EDA, 할당된 부분의 교차검증 진행
+  * **리뷰**: 전처리 방법 및 하이퍼파라미터 관련 논의
+  * **발표 및 문서화**: 발표, 리드미 초안 작성
+#### 3) [임현수](https://github.com/EbraLim/)
+  * **일정 관리**: 일자별/멤버별 업무 기획 및 분배
+  * **데이터 프로세싱**: EDA 및 wrong data 발견, 할당된 부분의 교차검증 진행
+  * **리뷰**: 파이프라인 코드 리뷰 및 피드백, 깃허브 폴더 구조 관련 피드백, 전처리 방법 및 하이퍼파라미터 관련 논의
+  * **발표 및 문서화**: 프레젠테이션 자료 작성 및 발표, 리드미 최종본 작성
+----
+
+본 프로젝트는 패스트캠퍼스 데이터사이언스 취업스쿨 16th 머신러닝 프로젝트로 진행되었습니다.
